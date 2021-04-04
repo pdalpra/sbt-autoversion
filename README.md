@@ -4,6 +4,14 @@
 
 The `sbt-autoversion` plugin builds on the [sbt-release](https://github.com/sbt/sbt-release) and [sbt-git](https://github.com/sbt/sbt-git) plugins to automatically manage the version bump to apply (major, minor or patch version bumps), based on commits messages patterns.
 
+## Highlights
+
+* Fully automatic releases
+  * Supports `release with-defaults`
+* Enforces [Semantic Versioning](https://semver.org/)
+* Uses [Conventional Commits](https://www.conventionalcommits.org/) to determine version bumps
+  * Configurable default behavior for unconventional commits
+
 ## Adding to your project
 
 Add the following line to your `project/plugins.sbt`:
@@ -12,8 +20,7 @@ Add the following line to your `project/plugins.sbt`:
 addSbtPlugin("org.scala-sbt" % "sbt-autoversion" % "1.0.0")
 ```
 
-Since `sbt-autoversion` is an AutoPlugin, it will be automatically available to your projects,
-given you're including both the [sbt-release](https://github.com/sbt/sbt-release) and [sbt-git](https://github.com/sbt/sbt-git) plugins.
+Since `sbt-autoversion` is an `AutoPlugin`, it will be automatically available to your projects.
 
 ## Usage
 
@@ -21,25 +28,47 @@ given you're including both the [sbt-release](https://github.com/sbt/sbt-release
 
 `sbt-autoversion` however expose a few interesting tasks:
 
-* `latestTag`: fetches the latest Git tag, based on Semantic Versioning ordering
-* `unreleasedCommits`: lists commits since the latest tag/release
-* `suggestedBump`: shows what version bump the plugin has computed and would automatically apply on the next release.
+* `autoVersionLatestTag`: fetches the latest Git tag, based on Semantic Versioning ordering
+* `autoVersionUnreleasedCommits`: lists commits since the latest tag/release
+* `autoVersionSuggestedBump`: shows what version bump the plugin has computed and would automatically apply on the next release.
+
+## Commits
+
+Commits should be structured as follows:
+```
+<type>[optional scope]: <description>
+
+[optional body]
+```
+
+See [Conventional Commits](https://www.conventionalcommits.org/) for more details.
 
 ## Settings
 
-#### `tagNameCleaner`
+#### `autoVersionTagNameCleaner`
 
 Linked to sbt-release's `releaseTagName` setting, defines how to "clean up" a Git tag to get back a semver-compatible version.
 
-#### `majorRegexes`, `minorRegexes`, `bugfixRegexes`
+#### `autoVersionCommitConvention`
 
-The list of regular expression that a commit message should match to be seen as requiring respectively a major, a minor or a bugfix version bump (must match at least one pattern).
+Selects a version bump based on the "type" of commit (see: [Conventional Commits](https://www.conventionalcommits.org)).
 
-Default patterns:
+The following is the default convention:
+```scala
+case "major" | "breaking" => Some(Bump.Major)
+case "minor" | "feat" | "feature" => Some(Bump.Minor)
+case "fix" | "bugfix" | "patch" => Some(Bump.Bugfix)
+case _ => None
+```
 
-* major: `\[?breaking\]?.*` `\[?major\]?.*`
-* minor: `.*`
-* bugfix: `\[?bugfix\]?.*`, `\[?fix\]?.*`
+Any commit with `!` in the `<type>` or `BREAKING CHANGE` in the description is also interpreted as a major version bump.
+
+#### `autoVersionDefaultBump`
+
+If the plugin is unable to suggest a version bump based on commit messages, this version bump will be suggested instead.
+If set to `None`, an error will be thrown, and the release will be aborted.
+
+Set to `Some(Bump.Bugfix)` by default.
 
 # License
 
